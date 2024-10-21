@@ -23,7 +23,7 @@ class ExperimentTrainer():
         self.optimizer = optimizer
         self.criterion = loss_fn
 
-        self.num_tasks
+        self.num_tasks = num_tasks
         self.acc_full = [[] * num_tasks]
         self.acc_last = []
         self.acc_0 = []
