@@ -37,21 +37,25 @@ def main():
         device = torch.device("cuda")
     else:
         device = "cpu"
-    print(device)
+    print("Device:", device)
+
+    dataloaders = create_loaders()
+    print("Dataloaders created...")
     
     model = create_model().to(device)
     optim = setup_optimizer(model.parameters(), lr=args.lr)
-    dataloaders = create_loaders()
+    print("Model created...")
     
     trainer = ExperimentTrainer(dataloaders,
                                 model.to(device), 
                                 optim,
                                 nn.NLLLoss())
-    
+
+    print("Starting training process...")
+
     print(trainer.train_full(num_epochs=20))
     
     # Placeholder for actual model training logic
-    print("Starting training process...")
 
     
 
