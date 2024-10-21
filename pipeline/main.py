@@ -15,6 +15,7 @@ def parse_args():
     
     parser.add_argument('--lr', type=float, required=True, help="Learning rate")
     parser.add_argument('--optimizer', type=str, default="adam", help="Optimizer (default: adam)")
+    parser.add_argument('--num_epochs', type=int, default=30, help="Number of epochs")
     # parser.add_argument('--gpu', action='store_true', help="Use GPU if available")
     
     # Parse the arguments
@@ -30,6 +31,7 @@ def main():
     print(f"Hyperparameters:")
     print(f"  Learning Rate: {args.lr}")
     print(f"  Optimizer: {args.optimizer}")
+    print(f"  Number of epochs: {args.num_epochs}")
     # print(f"  Using GPU: {args.gpu}")
     
     # Here you can add the code for setting up the model, dataset, optimizer, etc.
@@ -37,7 +39,7 @@ def main():
         device = torch.device("cuda")
     else:
         device = "cpu"
-    print("Device:", device)
+    print("Device:", device, torch.cuda.get_device_name(0))
 
     dataloaders = create_loaders()
     print("Dataloaders created...")
@@ -45,15 +47,15 @@ def main():
     model = create_model().to(device)
     optim = setup_optimizer(model.parameters(), lr=args.lr)
     print("Model created...")
-    
+
+    print("Starting training...")
     trainer = ExperimentTrainer(dataloaders,
                                 model.to(device), 
                                 optim,
-                                nn.NLLLoss())
+                                nn.NLLLoss(),
+                                device)
 
-    print("Starting training process...")
-
-    print(trainer.train_full(num_epochs=20))
+    print(trainer.train_full(num_epochs=args.num_epochs))
     
     # Placeholder for actual model training logic
 

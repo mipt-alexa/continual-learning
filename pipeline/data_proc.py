@@ -7,27 +7,8 @@ from torch.utils.data import DataLoader, Subset, random_split
 from tqdm import tqdm
 
 
-train_data = datasets.CIFAR100(
-    root="/nfs/scistore14/chlgrp/avolkova/rotation1/data",
-    train=True,
-    download=True,
-    transform=nn.Sequential(T.ToImage(), 
-                            T.ToDtype(torch.float32, scale=True), 
-                            T.Resize(224), 
-                            T.Normalize(mean=(0.5071, 0.4867, 0.4408), std=(0.2675, 0.2565, 0.2761)),
-                            T.RandomHorizontalFlip(), 
-                            T.RandomRotation(10),
-                            )
-)
-
-test_val_data = datasets.CIFAR100(
-    root="/nfs/scistore14/chlgrp/avolkova/rotation1/data",
-    train=False,
-    download=True,
-    transform=nn.Sequential(T.ToImage(), 
-                            T.ToDtype(torch.float32, scale=True), 
-                            T.Resize(224))
-    )
+train_data = torch.load('../data/train_data.pt')
+test_val_data = torch.load('../data/test_val_data.pt')
 
 val_data, test_data = random_split(test_val_data, [5000, 5000])
 
@@ -43,7 +24,7 @@ def split_by_task(dataset, target_sep, batch_size=32):
         indx = [j for j, (_, target) in enumerate(dataset) if separator[0] <= target < separator[1]]
         subset = Subset(dataset, indx)
         loaders[i] = DataLoader(subset, batch_size=batch_size,
-                                   shuffle=True, num_workers=2)
+                                   shuffle=True, num_workers=4)
     return loaders
 
 
