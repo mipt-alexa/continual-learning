@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 train_data = datasets.CIFAR100(
-    root="data",
+    root="/nfs/scistore14/chlgrp/avolkova/rotation1/data",
     train=True,
     download=True,
     transform=nn.Sequential(T.ToImage(), 
@@ -21,7 +21,7 @@ train_data = datasets.CIFAR100(
 )
 
 test_val_data = datasets.CIFAR100(
-    root="data",
+    root="/nfs/scistore14/chlgrp/avolkova/rotation1/data",
     train=False,
     download=True,
     transform=nn.Sequential(T.ToImage(), 
