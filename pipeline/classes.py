@@ -41,8 +41,7 @@ class ExperimentTrainer():
                                          num_epochs)
         self.acc_full[task_id] = acc_val
         print("Model: ", self.model.name)
-        print(acc_val.item())
-        print("Accuracy on task", task_id, ": ", acc_val[-1].item())
+        print("Accuracy on task", task_id, ": ", acc_val)
         # visualize(loss, (acc_train, acc_val), filename="_".join(["task", str(task_id), self.model.name, str(num_epochs), "ep"]))
         
 

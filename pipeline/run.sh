@@ -14,13 +14,19 @@
 LEARNING_RATES=(1e-4 1e-3 1e-2)
 NUM_EPOCHS=(30)
 
+# Calculate total number of combinations
+num_learning_rates=${#LEARNING_RATES[@]}
+num_epochs=${#NUM_EPOCHS[@]}
+
 # Calculate the index for each hyperparameter using the SLURM_ARRAY_TASK_ID
-lr_idx=$((SLURM_ARRAY_TASK_ID % ${#LEARNING_RATES[@]}))
-ep_idx=$((SLURM_ARRAY_TASK_ID / ${#NUM_EPOCHS[@]}))
+lr_idx=$((SLURM_ARRAY_TASK_ID % num_learning_rates))
+ep_idx=$((SLURM_ARRAY_TASK_ID / num_learning_rates))
 
 # Set the hyperparameters for this job
 LEARNING_RATE=${LEARNING_RATES[$lr_idx]}
 NUM_EPOCHS=${NUM_EPOCHS[$ep_idx]}
+
+ep_idx=$((ep_idx % num_epochs))
 
 # Print the selected hyperparameters for logging/debugging
 echo "Running job with lr = $LEARNING_RATE, num_epochs = $NUM_EPOCHS"

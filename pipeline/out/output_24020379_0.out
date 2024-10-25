@@ -1,9 +1,0 @@
-Running job with lr = 1e-4
-Hyperparameters:
-  Learning Rate: 0.0001
-  Optimizer: adam
-Device: cuda NVIDIA L40S
-Dataloaders created...
-Model created...
-Starting training...
-Model:  ResNet
