@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, required=True, help="Learning rate")
     parser.add_argument('--optimizer', type=str, default="adam", help="Optimizer (default: adam)")
     parser.add_argument('--num_epochs', type=int, default=30, help="Number of epochs")
+    parser.add_argument('--model', type=str, default="", help="Model")    
     # parser.add_argument('--gpu', action='store_true', help="Use GPU if available")
     
     # Parse the arguments
@@ -29,6 +30,7 @@ def main():
     
     # Display the hyperparameters (for logging/debugging purposes)
     print(f"Hyperparameters:")
+    print(f"Model: {args.model}")
     print(f"  Learning Rate: {args.lr}")
     print(f"  Optimizer: {args.optimizer}")
     print(f"  Number of epochs: {args.num_epochs}")
@@ -56,9 +58,6 @@ def main():
                                 device)
 
     print(trainer.train_full(num_epochs=args.num_epochs))
-    
-    # Placeholder for actual model training logic
-
     
 
 if __name__ == "__main__":

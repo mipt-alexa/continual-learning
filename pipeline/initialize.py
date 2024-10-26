@@ -3,6 +3,9 @@ from classes import MyModel
 from torch import optim, nn
 
 
+models_dict = {}
+optim_dict = {}
+
 def create_model(model_name="resnet18"):
     if model_name=="resnet18":
         return MyModel(models.resnet18())
