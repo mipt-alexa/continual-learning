@@ -10,15 +10,11 @@
 #SBATCH --gres=gpu:1                          # Request 1 GPU
 #SBATCH --partition=gpu                       # Use GPU partition (adjust if needed)
 
-#SBATCH --mail-type=END                       #send emails
-#SBATCH --mail-user=avolkova@ist.ac.at
-
-
 # Define the hyperparameter grid (combinations of learning rate and batch size)
 MODEL="resnet"
 OPTIM="adam"
 LEARNING_RATES=(5e-5 5e-4)
-NUM_EPOCHS=(40)
+NUM_EPOCHS=(50)
 
 # Calculate total number of combinations
 num_learning_rates=${#LEARNING_RATES[@]}

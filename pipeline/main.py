@@ -7,6 +7,7 @@ from train import *
 from classes import *
 from visualize import *
 from initialize import *
+from visualize import *
 
 
 def parse_args():
@@ -35,6 +36,9 @@ def main():
     print(f"  Optimizer: {args.optimizer}")
     print(f"  Number of epochs: {args.num_epochs}")
     # print(f"  Using GPU: {args.gpu}")
+
+    lr_str = "{:.2e}".format(args.lr)
+    run_name = f"{args.model}_{args.optimizer}_{args.num_epochs}_lr={lr_str}"
     
     # Here you can add the code for setting up the model, dataset, optimizer, etc.
     if torch.cuda.is_available():
@@ -57,7 +61,10 @@ def main():
                                 nn.NLLLoss(),
                                 device)
 
-    print(trainer.train_full(num_epochs=args.num_epochs))
+    loss, acc_train, acc_val = trainer.train_full(num_epochs=args.num_epochs)
+    torch.save(acc_val, f"./results/{run_name}.pt")
+
+    visualize(loss, [acc_train, acc_val], run_name)
     
 
 if __name__ == "__main__":

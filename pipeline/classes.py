@@ -43,7 +43,8 @@ class ExperimentTrainer():
         self.acc_full[task_id] = acc_val
         print("Model: ", self.model.name)
         print("Accuracy on task", task_id, ": ", acc_val)
-        torch.save(acc_val, f"./results/{self.model}_{num_epochs}_{self.optimizer.lr}.pt")
+        
+        return loss, acc_train, acc_val
         # visualize(loss, (acc_train, acc_val), filename="_".join(["task", str(task_id), self.model.name, str(num_epochs), "ep"]))
         
 
