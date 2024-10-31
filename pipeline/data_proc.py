@@ -6,6 +6,11 @@ from torch.utils.data import DataLoader, Subset, random_split
 
 from tqdm import tqdm
 
+import warnings
+
+# Suppress FutureWarnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 
 train_data = torch.load('../data/train_data.pt')
 val_data = torch.load('../data/val_data.pt')

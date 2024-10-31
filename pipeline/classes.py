@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from train import train, train_class_incremental
+from train import train, evaluate
 
 
 class MyModel(nn.Module):
@@ -41,7 +41,7 @@ class ExperimentTrainer():
                                          self.loaders["val"][task_id], 
                                          num_epochs)
         self.acc_full[task_id] = acc_val
-        print("Model: ", self.model.name)
+        # print("Model: ", self.model.name)
         print("Accuracy on task", task_id, ": ", acc_val)
         
         return loss, acc_train, acc_val
@@ -49,13 +49,33 @@ class ExperimentTrainer():
         
 
     def train_class_inc(self, num_epochs_per_task=10):
-        acc_last, acc_0 = train_class_incremental(self.model, self.device, self.optimizer, 
-                                                    self.criterion, self.num_tasks, 
-                                                    num_epochs_per_task)
-        self.acc_last = acc_last
-        self.acc_0 = acc_0
+        acc_on_task_0 = torch.empty(self.num_tasks).to(self.device)
+        acc_on_last_task = torch.empty(0).to(self.device)
+        
+        for i in range(self.num_tasks):
+            _, acc_train, acc_val = train(self.model, 
+                                         self.device, 
+                                         self.optimizer, 
+                                         self.criterion, 
+                                         self.loaders["train"][i], 
+                                         self.loaders["val"][i], 
+                                         num_epochs_per_task)
 
-        print("Model: ", self.model.name )
-        # visualize_class_incremental(self.acc_last, self.acc_0, 
-        #                             filename="_".join(["CIL", str(self.num_tasks), self.model.name, str(num_epochs_per_task), "ep"])
-                                   # )
+            acc_on_last_task = torch.cat((acc_on_last_task, acc_val))
+            acc_on_task_0[i] = evaluate(self.model, self.device, self.loaders["val"][0])
+
+            print(f"Finished training on task {i}...")
+                         
+        return acc_on_last_task, acc_on_task_0
+
+
+        # acc_last, acc_0 = train_class_incremental(self.model, self.device, self.optimizer, 
+        #                                             self.criterion, self.num_tasks, 
+        #                                             num_epochs_per_task)
+        # self.acc_last = acc_last
+        # self.acc_0 = acc_0
+
+        # print("Model: ", self.model.name )
+        # # visualize_class_incremental(self.acc_last, self.acc_0, 
+        # #                             filename="_".join(["CIL", str(self.num_tasks), self.model.name, str(num_epochs_per_task), "ep"])
+        #                            # )

@@ -9,16 +9,16 @@ from tqdm import tqdm
 
 def evaluate(model, device, test_loader):
     model.eval()
-    scores = 0.
+    scores = torch.zeros(1).to(device)
     for data, target in test_loader:
         pred = model(data.to(device)).argmax(dim=1)
         scores += (pred == target.to(device)).float().mean(dim=0)
-    return scores / len(test_loader) 
+    return scores.item() / len(test_loader) 
 
 
 def train(model, device, optimizer, criterion, train_loader, val_loader, num_epochs=30):
-    losses = torch.zeros(num_epochs)
-    acc_scores = torch.empty((2, num_epochs)) 
+    losses = torch.zeros(num_epochs).to(device)
+    acc_scores = torch.empty((2, num_epochs)).to(device) 
     
     for i in tqdm(range(num_epochs)):
         model.train()
