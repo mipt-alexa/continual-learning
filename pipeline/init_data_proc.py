@@ -16,7 +16,8 @@ train_data = datasets.CIFAR100(
                             T.Resize(224), 
                             T.Normalize(mean=(0.5071, 0.4867, 0.4408), std=(0.2675, 0.2565, 0.2761)),
                             T.RandomHorizontalFlip(), 
-                            T.RandomRotation(10),
+                            T.RandomCrop((224, 224), padding=20, padding_mode="symmetric"),
+                            T.AutoAugment(policy=T.AutoAugmentPolicy.CIFAR10),
                             )
 )
 

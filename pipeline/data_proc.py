@@ -23,7 +23,7 @@ def get_image_shape():
     return (1,) + tuple(train_data[0][0].shape)
 
 
-def create_loaders_from_subset(dataset, name, num_classes, batch_size=32):
+def create_loaders_from_subset(dataset, name, num_classes, batch_size=128):
     loaders = [None for _ in range(num_classes)]
     
     for i in tqdm(range(num_classes)):
@@ -40,4 +40,14 @@ def create_loaders(num_tasks = 10):
         loaders_dict[k] = create_loaders_from_subset(v, k, num_tasks)
         
     return loaders_dict
-        
+
+
+def create_full_ds_loaders(batch_size=64):
+    loaders_dict = {}
+    
+    for name, data in data_dict.items():
+        loaders_dict[name] = [DataLoader(data, batch_size=batch_size,
+                                   shuffle=True, num_workers=4)]
+    
+    return loaders_dict
+    

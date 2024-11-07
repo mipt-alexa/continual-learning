@@ -1,12 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=cil_data_prep      # Job name
-#SBATCH --output=output_%A_%a.out             # Standard output (%A for job ID, %a for array index)
-#SBATCH --error=error_%A_%a.err               # Standard error
+#SBATCH --output=out/output_%A.out             # Standard output (%A for job ID, %a for array index)
+#SBATCH --error=out/error_%A.err               # Standard error
 #SBATCH --time=01:00:00                       # Time limit
 #SBATCH --ntasks=1                            # Number of tasks per job
 #SBATCH --cpus-per-task=4                     # Number of CPU cores per task
 #SBATCH --mem=16G                             # Memory per job
-#SBATCH --gres=gpu:1                          # Request 1 GPU
 #SBATCH --partition=gpu                       # Use GPU partition (adjust if needed)
 
 
