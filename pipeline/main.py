@@ -13,6 +13,8 @@ from initialize import *
 import torch._dynamo
 torch._dynamo.config.suppress_errors = True
 
+torch.set_float32_matmul_precision('high')
+
 
 def custom_serializer(obj):
     if isinstance(obj, torch.Tensor):
@@ -65,7 +67,7 @@ def main():
     print("Model created...")
 
     optim = setup_optimizer(model.parameters(), lr=args["lr"], weight_decay=args["weight_decay"])
-    scheduler = setup_scheduler(optim, mode=args["mode"])
+    scheduler = setup_scheduler(optim, mode=args["mode"], num_epochs=args["num_epochs"])
     print("Optimizer and scheduler created..")
     
     trainer = ExperimentTrainer(dataloaders,
@@ -76,8 +78,8 @@ def main():
                                 device)
 
     # Create readable filename for saving results containing hyperparameters
-    args["lr"] = "{:.0e}".format(args["lr"])
-    args["weight_decay"] = "{:.0e}".format(args["weight_decay"])
+    args["lr"] = "{:.0e}".format(args["lr"]).replace('e-0', 'e-').replace('e+0', 'e+')
+    args["weight_decay"] = "{:.0e}".format(args["weight_decay"]).replace('e-0', 'e-').replace('e+0', 'e+')
     run_name = '_'.join([str(value) for value in args.values()])
 
     print("Starting training...")
@@ -95,10 +97,16 @@ def main():
         args["acc_0"] = acc_0
 
     elif args["mode"] == "cil_hook":
-        acc_last, acc_0 = trainer.train_class_inc_hook(num_epochs_per_task=args["num_epochs"])
+        loss, acc_last, acc_0 = trainer.train_class_inc_hook(num_epochs_per_task=args["num_epochs"])
         args["loss"] = loss
         args["acc_last"] = acc_last
         args["acc_0"] = acc_0
+
+    elif args["mode"] == "cil_replay":
+        loss, acc_last, acc_0 = trainer.train_class_inc_replay(num_epochs_per_task=args["num_epochs"])
+        args["loss"] = loss
+        args["acc_last"] = acc_last
+        args["acc_0"] = acc_0        
  
 
     print("Training finished")

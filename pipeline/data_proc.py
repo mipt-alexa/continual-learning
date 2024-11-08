@@ -42,7 +42,7 @@ def create_loaders(num_tasks = 10):
     return loaders_dict
 
 
-def create_full_ds_loaders(batch_size=64):
+def create_full_ds_loaders(batch_size=128):
     loaders_dict = {}
     
     for name, data in data_dict.items():

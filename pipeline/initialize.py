@@ -21,12 +21,14 @@ def setup_optimizer(model_params, lr, weight_decay=0.):
     return optim.Adam(model_params, lr=lr, weight_decay=weight_decay)
 
 
-def setup_scheduler(optimizer, mode="", gamma=0.96):
+def setup_scheduler(optimizer, mode="", gamma=0.98, num_epochs=60):
     if mode == "full":
         
         scheduler_1 = optim.lr_scheduler.LinearLR(optimizer, start_factor=0.05, end_factor=1, total_iters=10)
         scheduler_2 = optim.lr_scheduler.ConstantLR(optimizer, factor=1)
-        scheduler_3 = optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+        # scheduler_3 = optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
+        scheduler_3 = optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
+
         scheduler = optim.lr_scheduler.SequentialLR(optimizer, [scheduler_1, scheduler_2, scheduler_3], milestones=[10, 5])
 
     else:

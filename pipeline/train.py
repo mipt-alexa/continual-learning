@@ -7,6 +7,10 @@ import torchvision.transforms.v2 as T
 from tqdm import tqdm
 
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message="The epoch parameter in `scheduler.step()` was not necessary and is being deprecated")
+
+
 def evaluate(model, device, test_loader):
     model.eval()
     scores = torch.zeros(1).to(device)
@@ -38,7 +42,7 @@ def train(model, device, optimizer, scheduler, criterion, train_loader, val_load
         acc_scores[0][i] = evaluate(model, device, train_loader)
         acc_scores[1][i] = evaluate(model, device, val_loader)
            
-        print(f"Epoch {i}: loss={loss.item()}, train_accuracy={acc_scores[0][i]}, val_accuracy={acc_scores[1][i]}")
+        print(f"Epoch {i}: loss = {loss.item():4.2f}, train_acc = {acc_scores[0][i]:.2f}, val_acc = {acc_scores[1][i]:.2f}")
 
     return losses, acc_scores[0], acc_scores[1]
 

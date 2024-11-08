@@ -46,7 +46,7 @@ class ExperimentTrainer():
                                          num_epochs)
         self.acc_full[task_id] = acc_val
         # print("Model: ", self.model.name)
-        print("Accuracy on task", task_id, ": ", acc_val)
+        print(f"Accuracy on task {task_id}: {acc_val:.3f}")
         
         return loss, acc_train, acc_val
         # visualize(loss, (acc_train, acc_val), filename="_".join(["task", str(task_id), self.model.name, str(num_epochs), "ep"]))
@@ -71,7 +71,7 @@ class ExperimentTrainer():
             losses = torch.cat((losses, loss))
             acc_on_task_0[i] = evaluate(self.model, self.device, self.loaders["val"][0])
 
-            print(f"Finished training on task {i}...")
+            print(f"Finished training on task {i}... val_accuracy on task 0 ={acc_on_task_0[i]:.3f}")
                          
         return losses, acc_on_last_task, acc_on_task_0
 
@@ -113,5 +113,42 @@ class ExperimentTrainer():
             print(f"Finished training on task {i}...")
                          
         return losses, acc_on_last_task, acc_on_task_0
+
+
+    def train_class_inc_replay(self, replay_epochs=1, num_epochs_per_task=10):
+        acc_on_task_0 = torch.empty(self.num_tasks).to(self.device)
+        acc_on_last_task = torch.empty(0).to(self.device)
+        losses = torch.empty(0).to(self.device)
+        
+        for i in range(self.num_tasks):
+            loss, acc_train, acc_val = train(self.model, 
+                                         self.device, 
+                                         self.optimizer, 
+                                         self.scheduler,
+                                         self.criterion, 
+                                         self.loaders["train"][i], 
+                                         self.loaders["val"][i], 
+                                         num_epochs_per_task)
+
+            acc_on_last_task = torch.cat((acc_on_last_task, acc_val))
+            losses = torch.cat((losses, loss))
+
+            # add replay: extra training epochs for each previous tasks
+            for replay_index in range(0, i):
+                _, _, _ = train(self.model, 
+                                                 self.device, 
+                                                 self.optimizer, 
+                                                 self.scheduler,
+                                                 self.criterion, 
+                                                 self.loaders["train"][replay_index], 
+                                                 self.loaders["val"][replay_index], 
+                                                 num_epochs=replay_epochs)
+
+            acc_on_task_0[i] = evaluate(self.model, self.device, self.loaders["val"][0])
+            
+            print(f"Finished training on task {i}... val_accuracy on task 0 ={acc_on_task_0[i]:.3f}")
+                         
+        return losses, acc_on_last_task, acc_on_task_0        
+        
 
     
