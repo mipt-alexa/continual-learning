@@ -22,18 +22,22 @@ class MyModel(nn.Module):
 
 
 class ExperimentTrainer():
-    def __init__(self, dataloaders, model, optimizer, scheduler, loss_fn, device, num_tasks=10):
+    def __init__(self, dataloaders, model, optimizer, scheduler, loss_fn, device, num_epochs, num_tasks=10):
         self.device = device
         self.loaders = dataloaders
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.criterion = loss_fn
+        self.num_epochs = num_epochs  # FIX uniform usage of number of epochs across different modes 
 
         self.num_tasks = num_tasks
         self.acc_full = [[] * num_tasks]
         self.acc_last = []
         self.acc_0 = []
+
+        self.acc = torch.full((num_tasks, num_tasks, num_epochs), -1.)
+        
 
     def train_full(self, task_id=0, num_epochs=20):
         loss, acc_train, acc_val = train(self.model, 
@@ -43,7 +47,7 @@ class ExperimentTrainer():
                                          self.criterion, 
                                          self.loaders["train"][task_id], 
                                          self.loaders["val"][task_id], 
-                                         num_epochs)
+                                         self.num_epochs)
         self.acc_full[task_id] = acc_val
         # print("Model: ", self.model.name)
         print(f"Accuracy on task {task_id}: {acc_val:.3f}")
@@ -71,7 +75,7 @@ class ExperimentTrainer():
             losses = torch.cat((losses, loss))
             acc_on_task_0[i] = evaluate(self.model, self.device, self.loaders["val"][0])
 
-            print(f"Finished training on task {i}... val_accuracy on task 0 ={acc_on_task_0[i]:.3f}")
+            print(f"Finished training on task {i}... val_accuracy on task 0 = {acc_on_task_0[i]:.3f}")
                          
         return losses, acc_on_last_task, acc_on_task_0
 
@@ -146,7 +150,7 @@ class ExperimentTrainer():
 
             acc_on_task_0[i] = evaluate(self.model, self.device, self.loaders["val"][0])
             
-            print(f"Finished training on task {i}... val_accuracy on task 0 ={acc_on_task_0[i]:.3f}")
+            print(f"Finished training on task {i}... val_accuracy on task 0 = {acc_on_task_0[i]:.3f}")
                          
         return losses, acc_on_last_task, acc_on_task_0        
         

@@ -29,7 +29,7 @@ def setup_scheduler(optimizer, mode="", gamma=0.98, num_epochs=60):
         # scheduler_3 = optim.lr_scheduler.ExponentialLR(optimizer, gamma=gamma)
         scheduler_3 = optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
 
-        scheduler = optim.lr_scheduler.SequentialLR(optimizer, [scheduler_1, scheduler_2, scheduler_3], milestones=[10, 5])
+        scheduler = optim.lr_scheduler.SequentialLR(optimizer, [scheduler_1, scheduler_2, scheduler_3], milestones=[10, 15])
 
     else:
         scheduler = optim.lr_scheduler.ConstantLR(optimizer, factor=1.)

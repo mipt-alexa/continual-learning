@@ -2,7 +2,7 @@
 #SBATCH --job-name=vit_bench       # Job name
 #SBATCH --output=out/%x_%a.out             # Standard output (%A for job ID, %a for array index)
 #SBATCH --error=out/%x_%a.err               # Standard error
-#SBATCH --array=0-5                           # Array of jobs  
+#SBATCH --array=0-1                           # Array of jobs  
 #SBATCH --time=06:00:00                       # Time limit
 #SBATCH --ntasks=1                            # Number of tasks per job
 #SBATCH --cpus-per-task=4                     # Number of CPU cores per task
@@ -14,8 +14,8 @@
 MODEL="vit"
 MODE="full"
 OPTIM="adam"
-LEARNING_RATES=(5e-4 1e-4 5e-5)
-WEIGHT_DECAYS=(1e-4 1e-3)
+LEARNING_RATES=(5e-4)
+WEIGHT_DECAYS=(0. 1e-2)
 NUM_EPOCHS=60
 
 # Calculate total number of combinations
@@ -23,8 +23,8 @@ num_learning_rates=${#LEARNING_RATES[@]}
 num_decays=${#WEIGHT_DECAYS[@]}
 
 # Calculate the index for each hyperparameter using the SLURM_ARRAY_TASK_ID
-lr_idx=$((SLURM_ARRAY_TASK_ID % num_learning_rates))
-w_idx=$((SLURM_ARRAY_TASK_ID / num_learning_rates))
+lr_idx=$((SLURM_ARRAY_TASK_ID / num_decays))
+w_idx=$((SLURM_ARRAY_TASK_ID % num_decays))
 
 # Set the hyperparameters for this job
 LEARNING_RATE=${LEARNING_RATES[$lr_idx]}
@@ -32,7 +32,7 @@ WEIGHT_DECAY=${WEIGHT_DECAYS[$w_idx]}
 
 
 # Print the selected hyperparameters for logging/debugging
-echo "Running $SLURM_ARRAY_TASK_ID of job $SLURM_ARRAY_JOB_ID \n for $MODE task with $MODEL, optimizer $OPTIM, lr = $LEARNING_RATE, weight decay = $WEIGHT_DECAY for $NUM_EPOCHS epochs"
+echo "Running $SLURM_ARRAY_TASK_ID task of job $SLURM_ARRAY_JOB_ID"      # \n for $MODE task with $MODEL, optimizer $OPTIM, lr = $LEARNING_RATE, weight decay = $WEIGHT_DECAY for $NUM_EPOCHS epochs"
 
 # Load any necessary modules (if needed), activate virtual environments, etc.
 module load cuda

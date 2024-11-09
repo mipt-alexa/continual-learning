@@ -20,9 +20,19 @@ def evaluate(model, device, test_loader):
     return scores.item() / len(test_loader) 
 
 
-def train(model, device, optimizer, scheduler, criterion, train_loader, val_loader, num_epochs=30):
+def evaluate_all_tasks(model, device, loaders, num_tasks=10):
+    acc = torch.full((num_tasks, 1), -1.)
+    model.eval()
+    for t in range(num_tasks):
+        acc[t] = evaluate(model, device, loaders[t])
+    return acc
+
+
+def train(model, device, optimizer, scheduler, criterion, train_loader, val_loader, num_epochs=30, num_tasks=10):
     losses = torch.zeros(num_epochs).to(device)
     acc_scores = torch.empty((2, num_epochs)).to(device) 
+
+    acc = torch.full((num_tasks, num_tasks, num_epochs), -1.)
     
     for i in tqdm(range(num_epochs)):
         model.train()
@@ -42,7 +52,7 @@ def train(model, device, optimizer, scheduler, criterion, train_loader, val_load
         acc_scores[0][i] = evaluate(model, device, train_loader)
         acc_scores[1][i] = evaluate(model, device, val_loader)
            
-        print(f"Epoch {i}: loss = {loss.item():4.2f}, train_acc = {acc_scores[0][i]:.2f}, val_acc = {acc_scores[1][i]:.2f}")
+        print(f"Epoch {i}: loss = {loss.item():5.2f}, train_acc = {acc_scores[0][i]:.2f}, val_acc = {acc_scores[1][i]:.2f}")
 
     return losses, acc_scores[0], acc_scores[1]
 

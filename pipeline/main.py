@@ -45,8 +45,12 @@ def main():
     
     # Display the hyperparameters (for logging/debugging purposes)
     for key, value in args.items():
-        print(f"{key}: {value}")
-            
+        if isinstance(value, float):
+            print(f"{key}: {value:.0e}")
+        else:
+            print(f"{key}: {value}")
+
+    
     if torch.cuda.is_available():
         device = torch.device("cuda")
     else:
@@ -69,13 +73,18 @@ def main():
     optim = setup_optimizer(model.parameters(), lr=args["lr"], weight_decay=args["weight_decay"])
     scheduler = setup_scheduler(optim, mode=args["mode"], num_epochs=args["num_epochs"])
     print("Optimizer and scheduler created..")
+
+    
+    num_epochs = args["num_epochs"] # FIX for replay mode - number epochs is larger
     
     trainer = ExperimentTrainer(dataloaders,
                                 model.to(device), 
                                 optim,
                                 scheduler,
                                 nn.NLLLoss(),
-                                device)
+                                device,
+                                num_epochs
+                               )
 
     # Create readable filename for saving results containing hyperparameters
     args["lr"] = "{:.0e}".format(args["lr"]).replace('e-0', 'e-').replace('e+0', 'e+')
