@@ -1,5 +1,7 @@
 /pipeline/out/
-/data/
+pipeline/data/
+/pipeline/results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

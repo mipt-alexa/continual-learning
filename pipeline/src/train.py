@@ -11,50 +11,57 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, message="The epoch parameter in `scheduler.step()` was not necessary and is being deprecated")
 
 
-def evaluate(model, device, test_loader):
+def evaluate(model, device, loader):
     model.eval()
     scores = torch.zeros(1).to(device)
-    for data, target in test_loader:
+    for data, target in loader:
         pred = model(data.to(device)).argmax(dim=1)
         scores += (pred == target.to(device)).float().mean(dim=0)
-    return scores.item() / len(test_loader) 
+    return scores.to(device) / len(loader) 
 
 
 def evaluate_all_tasks(model, device, loaders, num_tasks=10):
-    acc = torch.full((num_tasks, 1), -1.)
+    acc = torch.empty(0).to(device)
     model.eval()
+
     for t in range(num_tasks):
-        acc[t] = evaluate(model, device, loaders[t])
+        acc = torch.cat((acc, evaluate(model, device, loaders[t])))
     return acc
 
 
-def train(model, device, optimizer, scheduler, criterion, train_loader, val_loader, num_epochs=30, num_tasks=10):
+def train(model, device, optimizer, scheduler, criterion, train_loaders, val_loaders, task_id, num_epochs=30, num_tasks=10):
     losses = torch.zeros(num_epochs).to(device)
-    acc_scores = torch.empty((2, num_epochs)).to(device) 
+    # acc_scores = torch.empty((2, num_epochs)).to(device) 
 
-    acc = torch.full((num_tasks, num_tasks, num_epochs), -1.)
+    train_acc = torch.empty((0, num_tasks)).to(device)
+    val_acc = torch.empty((0, num_tasks)).to(device)
     
     for i in tqdm(range(num_epochs)):
         model.train()
         
-        for data, target in train_loader:    
+        for data, target in train_loaders[task_id]:    
             optimizer.zero_grad()
             output = model(data.to(device))            
             loss = criterion(output, target.to(device))
-            losses[i] += loss.data.to("cpu") / len(train_loader)
+            losses[i] += loss.data.to("cpu") / len(train_loaders[task_id])
 
             loss.backward()
             optimizer.step()
             
         scheduler.step()
 
-        model.eval()
-        acc_scores[0][i] = evaluate(model, device, train_loader)
-        acc_scores[1][i] = evaluate(model, device, val_loader)
+        last_train_acc = evaluate_all_tasks(model, device, train_loaders, num_tasks)
+        train_acc = torch.cat((train_acc, last_train_acc.unsqueeze(0)))
+        
+        last_val_acc = evaluate_all_tasks(model, device, val_loaders, num_tasks)
+        val_acc = torch.cat((val_acc, last_val_acc.unsqueeze(0)))
+        
+        # acc_scores[0][i] = evaluate(model, device, train_loader)
+        # acc_scores[1][i] = evaluate(model, device, val_loader)
            
-        print(f"Epoch {i}: loss = {loss.item():5.2f}, train_acc = {acc_scores[0][i]:.2f}, val_acc = {acc_scores[1][i]:.2f}")
+        print(f"Epoch {i}: loss = {loss.item():5.2f}, train_acc = {train_acc[-1][task_id]:.2f}, val_acc = {val_acc[-1][task_id]:.2f}")
 
-    return losses, acc_scores[0], acc_scores[1]
+    return losses, train_acc, val_acc
 
 
 

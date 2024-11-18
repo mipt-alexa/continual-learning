@@ -1,17 +1,17 @@
 import argparse
-import torch
-
 import json  
+import wandb
 
 from data_proc import *
 from train import *
 from classes import *
-from visualize import *
 from initialize import *
 
-
+import torch
 import torch._dynamo
 torch._dynamo.config.suppress_errors = True
+
+TORCHDYNAMO_VERBOSE=0 
 
 torch.set_float32_matmul_precision('high')
 
@@ -26,6 +26,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Hyperparameter Tuning for Model Training")
 
     parser.add_argument('--mode', type=str, required=False, default="", help="Mode of training")
+    parser.add_argument('--freeze', type=bool, default=False, help="Flag to freeze partually the last linear layer")
+
     parser.add_argument('--model', type=str, default="", help="Model")   
     parser.add_argument('--optimizer', type=str, default="adam", help="Optimizer (default: adam)")
     parser.add_argument('--lr', type=float, required=True, help="Learning rate")
@@ -60,14 +62,19 @@ def main():
     
     if args["mode"] == "full":
         #for benchmarking on full cifar 100 dataloaders are different
-        dataloaders = create_full_ds_loaders()  
+        dataloaders = create_full_ds_loaders(replay=False)  
+    elif args["mode"] == "cil_replay":
+        # dataloaders with data of all previous tasks reshuffled
+        dataloaders = create_loaders(replay=True)
     else:
         # regular [10] loaders with labels division
-        dataloaders = create_loaders()
+        dataloaders = create_loaders(replay=False)
     print("Dataloaders created...")
+
     
     model = create_model(args["model"]).to(device)
-    model = torch.compile(model)
+    if torch.cuda.get_device_name(0) not in ["Tesla P100-PCIE-16GB", "NVIDIA GeForce GTX 1080 Ti"]:
+        model = torch.compile(model)
     print("Model created...")
 
     optim = setup_optimizer(model.parameters(), lr=args["lr"], weight_decay=args["weight_decay"])
@@ -78,7 +85,7 @@ def main():
     num_epochs = args["num_epochs"] # FIX for replay mode - number epochs is larger
     
     trainer = ExperimentTrainer(dataloaders,
-                                model.to(device), 
+                                model, 
                                 optim,
                                 scheduler,
                                 nn.NLLLoss(),
@@ -91,37 +98,32 @@ def main():
     args["weight_decay"] = "{:.0e}".format(args["weight_decay"]).replace('e-0', 'e-').replace('e+0', 'e+')
     run_name = '_'.join([str(value) for value in args.values()])
 
+    wandb.init(project=run_name, 
+               config=args)
+
     print("Starting training...")
+
     
     if args["mode"] == "full":
         loss, acc_train, acc_val = trainer.train_full(num_epochs=args["num_epochs"])
-        args["loss"] = loss
-        args["acc_train"] = acc_train
-        args["acc_val"] = acc_val
-        
-    elif args["mode"] == "cil":
-        loss, acc_last, acc_0 = trainer.train_class_inc(num_epochs_per_task=args["num_epochs"])
-        args["loss"] = loss
-        args["acc_last"] = acc_last
-        args["acc_0"] = acc_0
-
-    elif args["mode"] == "cil_hook":
-        loss, acc_last, acc_0 = trainer.train_class_inc_hook(num_epochs_per_task=args["num_epochs"])
-        args["loss"] = loss
-        args["acc_last"] = acc_last
-        args["acc_0"] = acc_0
-
-    elif args["mode"] == "cil_replay":
-        loss, acc_last, acc_0 = trainer.train_class_inc_replay(num_epochs_per_task=args["num_epochs"])
-        args["loss"] = loss
-        args["acc_last"] = acc_last
-        args["acc_0"] = acc_0        
  
+    elif args["freeze"]:
+        loss, acc_train, acc_val = trainer.train_class_inc_hook(num_epochs_per_task=args["num_epochs"])
+        
+    elif args["mode"] in ["cil",  "cil_replay"]:
+        loss, acc_train, acc_val = trainer.train_class_inc(num_epochs_per_task=args["num_epochs"])
 
+    args["loss"] = loss
+    args["acc_train"] = acc_train
+    args["acc_val"] = acc_val
+
+    wandb.log({"loss": loss, "acc_train": acc_train, "acc_val": acc_val})
+    
     print("Training finished")
+
     
     # Saving results as json file in /results/ directory
-    with open(f"./results/{run_name}.json", "w") as outfile:
+    with open(f"results/{run_name}.json", "w") as outfile:
         json.dump(args, outfile, default=custom_serializer)
 
     print("Results saved!")
