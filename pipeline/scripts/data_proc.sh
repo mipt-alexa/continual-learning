@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=data_prep      # Job name
-#SBATCH --output=out/%x_%A.out             # Standard output (%A for job ID, %a for array index)
-#SBATCH --error=out/%x_%A.err               # Standard error
+#SBATCH --output=out/%x.out             # Standard output (%A for job ID, %a for array index)
+#SBATCH --error=out/%x.err               # Standard error
 #SBATCH --time=01:00:00                       # Time limit
 #SBATCH --ntasks=1                            # Number of tasks per job
-#SBATCH --cpus-per-task=4                     # Number of CPU cores per task
+#SBATCH --cpus-per-task=8                     # Number of CPU cores per task
 #SBATCH --mem=16G                             # Memory per job
 #SBATCH --partition=gpu                       # Use GPU partition (adjust if needed)
 
