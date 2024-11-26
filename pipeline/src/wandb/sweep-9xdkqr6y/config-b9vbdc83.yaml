@@ -1,0 +1,18 @@
+wandb_version: 1
+
+device:
+  value: NVIDIA L40S
+freeze:
+  value: 'true'
+lr:
+  value: 0.0003895263312203807
+mode:
+  value: full
+model:
+  value: resnet
+num_epochs:
+  value: 252
+optimizer:
+  value: adam
+weight_decay:
+  value: 0.05798843058808879

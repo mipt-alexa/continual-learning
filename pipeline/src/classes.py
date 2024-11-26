@@ -31,43 +31,40 @@ class MyModel(nn.Module):
 
 
 class ExperimentTrainer():
-    def __init__(self, dataloaders, model, optimizer, scheduler, loss_fn, device, num_epochs, num_tasks=10):
+    def __init__(self, dataloaders, model, optimizer, scheduler, loss_fn, device, num_tasks=10):
         self.device = device
         self.loaders = dataloaders
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.criterion = loss_fn
-        self.num_epochs = num_epochs  # FIX uniform usage of number of epochs across different modes 
+        # self.num_epochs = num_epochs  # FIX uniform usage of number of epochs across different modes 
 
         self.num_tasks = num_tasks
-        # self.acc_full = [[] * num_tasks]
-        # self.acc_last = []
-        # self.acc_0 = []
 
         self.losses = torch.empty(0).to(device)
         self.val_acc = torch.empty((0, num_tasks)).to(device)
         self.train_acc = torch.empty((0, num_tasks)).to(device)
         
 
-    def train_full(self, task_id=0, num_epochs=20):
-        loss, acc_train, acc_val = train(self.model, 
-                                         self.device, 
-                                         self.optimizer, 
-                                         self.scheduler,
-                                         self.criterion, 
-                                         self.loaders["train"][task_id], 
-                                         self.loaders["val"][task_id], 
-                                         self.num_epochs)
-        self.acc_full[task_id] = acc_val
-        print(f"Accuracy on task {task_id}: {acc_val:.3f}")
+    # def train_full(self, task_id=0, num_epochs=20):
+    #     loss, acc_train, acc_val = train(self.model, 
+    #                                      self.device, 
+    #                                      self.optimizer, 
+    #                                      self.scheduler,
+    #                                      self.criterion, 
+    #                                      self.loaders["train"][task_id], 
+    #                                      self.loaders["val"][task_id], 
+    #                                      )
+    #     self.acc_full[task_id] = acc_val
+    #     print(f"Accuracy on task {task_id}: {acc_val:.3f}")
         
-        return loss, acc_train, acc_val
+    #     return loss, acc_train, acc_val
         
 
-    def train_class_inc(self, num_epochs_per_task=10):
+    def train(self, tasks=range(0, 10), num_epochs_per_task=10):
         
-        for task_id in range(self.num_tasks):
+        for task_id in tasks:
             loss, train_acc, val_acc = train(self.model, 
                                          self.device, 
                                          self.optimizer, 
@@ -76,8 +73,10 @@ class ExperimentTrainer():
                                          self.loaders["train"], 
                                          self.loaders["val"], 
                                          task_id,
-                                         num_epochs_per_task)
+                                         num_epochs_per_task,
+                                         num_tasks = len(tasks))
 
+            print(self.val_acc.shape, val_acc.shape)
             self.val_acc = torch.cat((self.val_acc, val_acc))
             self.train_acc = torch.cat((self.train_acc, train_acc))
             self.losses = torch.cat((self.losses, loss))

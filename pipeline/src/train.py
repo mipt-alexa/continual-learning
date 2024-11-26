@@ -5,6 +5,7 @@ from torchvision import datasets, models
 import torchvision.transforms.v2 as T
 
 from tqdm import tqdm
+import wandb
 
 
 import warnings
@@ -55,11 +56,13 @@ def train(model, device, optimizer, scheduler, criterion, train_loaders, val_loa
         
         last_val_acc = evaluate_all_tasks(model, device, val_loaders, num_tasks)
         val_acc = torch.cat((val_acc, last_val_acc.unsqueeze(0)))
-        
-        # acc_scores[0][i] = evaluate(model, device, train_loader)
-        # acc_scores[1][i] = evaluate(model, device, val_loader)
-           
-        print(f"Epoch {i}: loss = {loss.item():5.2f}, train_acc = {train_acc[-1][task_id]:.2f}, val_acc = {val_acc[-1][task_id]:.2f}")
+
+        wandb.log({"loss": losses[i].item(), 
+                   "lr": optimizer.param_groups[0]["lr"], 
+                   **{f"train_acc_{j}": value for j, value in enumerate(last_train_acc.tolist())}, 
+                   **{f"val_acc_{j}": value for j, value in enumerate(last_val_acc.tolist())}})
+                                     
+        print(f"Epoch {i}: loss = {losses[i].item():5.2f}, train_acc = {train_acc[-1][task_id]:.2f}, val_acc = {val_acc[-1][task_id]:.2f}")
 
     return losses, train_acc, val_acc
 
