@@ -32,59 +32,58 @@ def create_loaders(buffer_size=0, num_tasks=10, batch_size=128):
 
     # Train
     train_data = [None for _ in range(num_tasks)]
-    replay_samples = [None for _ in range(num_tasks)]
 
-    labels_per_task = 100 // num_tasks
-    target_sep = [(i*labels_per_task, (i+1)*labels_per_task) for i in range(num_tasks)]
-    target_sep[-1] = (target_sep[-1][0], 100)
 
-    # First load all training data
-    for i in range(num_tasks):
+    label_to_indx = defaultdict(lambda: torch.empty(0, dtype=int), {})
+    for i in tqdm(range(num_tasks)):
         train_data[i] = torch.load(f"{data_path}/cil/train/{i}.pt")
+        for indx, (_, label) in enumerate(train_data[i]):
+            label_to_indx[label] = torch.cat((label_to_indx[label], torch.tensor([indx], dtype=int)))
 
-        label_to_indices = defaultdict(lambda: torch.empty(0, dtype=int), {})
-        for idx, (_, label) in enumerate(train_data[i]):
-            label_to_indices[label] = torch.cat((label_to_indices[label], torch.tensor([idx], dtype=int)))
 
-        
-        if buffer_size > 0:
-            # Get labels for current task
-            
-            num_labels = len(label_to_indices.keys())
-            
-            # Calculate samples per class
-            samples_per_task = buffer_size // (i + 1) 
-            samples_per_label = samples_per_task // num_labels
-            
-            # Select equal samples for each class
-            task_replay_indices = []
+    buffer_label_to_indx = defaultdict(lambda: torch.empty(0, dtype=int), {})
 
-            for label, indx in label_to_indices.items():
-                perm = torch.randperm(len(indx))
-                selected_indices = indx[perm[:samples_per_label]]
-                task_replay_indices.append(selected_indices)
-            
-            # Combine all selected indices
-            replay_samples[i] = torch.cat(task_replay_indices)
+    num_labels_per_task = 100 // num_tasks
 
     for task_id in tqdm(range(num_tasks)):
-        if task_id > 0 and buffer_size > 0:
-            # Create replay buffer from fixed samples of previous tasks
-            replay_buffer = []
-            
-            samples_per_task = buffer_size // (i + 1) 
+        
+        subsets = [] # Subsets of differrent task to compose training data with replay
 
-            for prev_task_id in range(task_id):
-                perm = torch.randperm(len(replay_samples[prev_task_id]))
-                replay_buffer.append(Subset(train_data[prev_task_id], replay_samples[prev_task_id][perm[:samples_per_task]]))
+        if task_id > 0:
+
+            buffer_per_label = buffer_size // task_id // num_labels_per_task
+
+            # Reduce the number of old samples in replay buffer
+            for label in range(num_labels_per_task * (task_id - 1)):
+                perm = torch.randperm(len(buffer_label_to_indx[label]))
+                croppped_ind = perm[:buffer_per_label]
+
+                buffer_label_to_indx[label] = buffer_label_to_indx[label][croppped_ind]
+
+            # Add to replay buffr samples from the previous task
+            for label in range(num_labels_per_task * (task_id - 1), num_labels_per_task * task_id):
+                perm = torch.randperm(len(label_to_indx[label]))
+                croppped_ind = perm[:buffer_per_label]
+
+                buffer_label_to_indx[label] = label_to_indx[label][croppped_ind]
+
+            buffer_task_to_indx = defaultdict(lambda: torch.empty(0, dtype=int), {})
+
+            # Convert to indices within task 
+            for label, indx in buffer_label_to_indx.items():
+                task = label // num_labels_per_task
+                buffer_task_to_indx[task] = torch.cat((buffer_task_to_indx[task], indx))
+
+            # Store Subsets for each task
+            for task, indx in buffer_task_to_indx.items():
+                subsets.append(Subset(train_data[task], indx))
             
-            # Combine current task data with replay buffer
-            data = ConcatDataset([train_data[task_id]] + replay_buffer)
-        else:
-            data = train_data[0]
-            
-        loaders["train"][task_id] = DataLoader(data, batch_size=batch_size,
-                                       shuffle=True, num_workers=8, pin_memory=True)
+        # Add the new task
+        subsets.append(train_data[task_id])  
+        data_with_replay = ConcatDataset(subsets)
+
+        loaders["train"][task_id] = DataLoader(data_with_replay, batch_size=batch_size,
+                                                shuffle=True, num_workers=8, pin_memory=True)
 
     return loaders
     
