@@ -37,7 +37,7 @@ def setup_scheduler(optimizer, mode="", gamma=0.98, num_epochs_per_task=10):
     # else:
     #     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[50,100], gamma=0.6)
 
-    milestones = torch.tensor(range(1, 6), dtype=int) * 3 * num_epochs_per_task
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones.tolist(), gamma=0.1)
+    milestones = torch.tensor(range(1, 6), dtype=int) * 2 * num_epochs_per_task
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones.tolist(), gamma=0.2)
 
     return scheduler

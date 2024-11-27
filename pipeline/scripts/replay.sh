@@ -12,24 +12,25 @@
 
 # Define the hyperparameter grid (combinations of learning rate and batch size)
 MODE="cil_replay"
+BUFFERS=(10 100 1000)
 # FREEZE=false
-MODEL="vit"
+MODEL="resnet"
 OPTIM="adam"
 LEARNING_RATES=(4e-4 2e-4)
-WEIGHT_DECAYS=(1e-3 1e-2 5e-2)
+WEIGHT_DECAY=1e-2
 NUM_EPOCHS=20
 
 # Calculate total number of combinations
 num_learning_rates=${#LEARNING_RATES[@]}
-num_decays=${#WEIGHT_DECAYS[@]}
+num_buffers=${#BUFFERS[@]}
 
 # Calculate the index for each hyperparameter using the SLURM_ARRAY_TASK_ID
-lr_idx=$((SLURM_ARRAY_TASK_ID / num_decays))
-w_idx=$((SLURM_ARRAY_TASK_ID % num_decays))
+lr_idx=$((SLURM_ARRAY_TASK_ID / num_buffers))
+b_idx=$((SLURM_ARRAY_TASK_ID % num_buffers))
 
 # Set the hyperparameters for this job
 LEARNING_RATE=${LEARNING_RATES[$lr_idx]}
-WEIGHT_DECAY=${WEIGHT_DECAYS[$w_idx]}
+BUFFER=${BUFFERS[$b_idx]}
 
 # Print the selected hyperparameters for logging/debugging
 echo "Running $SLURM_ARRAY_TASK_ID task of job $SLURM_ARRAY_JOB_ID"     
@@ -40,4 +41,4 @@ module load conda
 conda activate TorchEnv
 
 # Run the Python training script with the selected hyperparameters
-python src/main.py --mode $MODE --model $MODEL --lr $LEARNING_RATE --weight_decay $WEIGHT_DECAY --num_epochs $NUM_EPOCHS
+python src/main.py --mode $MODE --buffer $BUFFER --model $MODEL --lr $LEARNING_RATE --weight_decay $WEIGHT_DECAY --num_epochs $NUM_EPOCHS

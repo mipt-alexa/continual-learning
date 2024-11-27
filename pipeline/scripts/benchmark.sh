@@ -2,7 +2,7 @@
 #SBATCH --job-name=bench                # Job name
 #SBATCH --output=out/%x_%a.out               # Standard output (%A for job ID, %a for array index)
 #SBATCH --error=out/%x_%a.err                # Standard error
-#SBATCH --array=0-1                           # Array of jobs  
+#SBATCH --array=0-5                           # Array of jobs  
 #SBATCH --time=24:00:00                       # Time limit
 #SBATCH --ntasks=1                            # Number of tasks per job
 #SBATCH --cpus-per-task=8                     # Number of CPU cores per task
@@ -15,8 +15,8 @@ MODE="full_resnet"
 # FREEZE=false
 MODEL="resnet"
 OPTIM="adam"
-LEARNING_RATES=(1e-2 5e-3)
-WEIGHT_DECAYS=(1e-2)
+LEARNING_RATES=(1e-3 5e-3)
+WEIGHT_DECAYS=(1e-4 1e-3 1e-2)
 NUM_EPOCHS=100
 
 # Calculate total number of combinations
