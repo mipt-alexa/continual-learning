@@ -33,6 +33,8 @@ def parse_args():
     parser.add_argument('--model', type=str, default="", help="Model")   
     parser.add_argument('--optimizer', type=str, default="adam", help="Optimizer (default: adam)")
     parser.add_argument('--lr', type=float, required=True, help="Learning rate")
+    parser.add_argument('--lr_mode', type=str, default="", required=False)
+
     parser.add_argument('--weight_decay', type=float, required=False, default=0., help="Weights decay rate for optimizer")
     parser.add_argument('--num_epochs', type=int, default=30, help="Number of epochs")
     # parser.add_argument('--gpu', action='store_true', help="Use GPU if available")
@@ -76,6 +78,10 @@ def main():
         
     print("Dataloaders created...")
 
+
+    num_epochs = args["num_epochs"] # FIX for replay mode - number epochs is larger
+    num_tasks = 1 if "full" in args["mode"] else 10
+
     
     model = create_model(args["model"]).to(device)
     if torch.cuda.get_device_name(0) not in ["Tesla P100-PCIE-16GB", "NVIDIA GeForce GTX 1080 Ti"]:
@@ -83,12 +89,9 @@ def main():
     print("Model created...")
 
     optim = setup_optimizer(model.parameters(), lr=args["lr"], weight_decay=args["weight_decay"])
-    scheduler = setup_scheduler(optim)
+    scheduler = setup_scheduler(optim, mode=args['lr_mode'], num_epochs_per_task=args['num_epochs'], num_tasks=num_tasks)
     print("Optimizer and scheduler created..")
 
-    
-    num_epochs = args["num_epochs"] # FIX for replay mode - number epochs is larger
-    num_tasks = 1 if "full" in args["mode"] else 10
     
     trainer = ExperimentTrainer(dataloaders,
                                 model, 
@@ -109,7 +112,7 @@ def main():
     run_name = '_'.join([str(args[key]) for key in args.keys()])
 
     # Log results to WandB
-    wandb.init(project=args["mode"], 
+    wandb.init(project=f'{args["mode"]}_{args["lr_mode"]}', 
                config=args_copy)
 
     print("Starting training...")
@@ -119,7 +122,7 @@ def main():
         loss, acc_train, acc_val = trainer.train(tasks=[0], num_epochs_per_task=args["num_epochs"])
  
     elif args["freeze"]:
-        loss, acc_train, acc_val = trainer.train_class_inc_hook(num_epochs_per_task=args["num_epochs"])
+        loss, acc_train, acc_val = trainer.train_hook(num_epochs_per_task=args["num_epochs"])
         
     elif "replay" in args["mode"]:
         loss, acc_train, acc_val = trainer.train(tasks=range(0, 10), num_epochs_per_task=args["num_epochs"])

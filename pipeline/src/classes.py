@@ -86,13 +86,13 @@ class ExperimentTrainer():
         return self.losses, self.train_acc, self.val_acc
 
     
-    def train_class_inc_hook(self, num_epochs_per_task=10):
+    def train_hook(self,  tasks=range(0, 10), num_epochs_per_task=10):
 
         set_size = 100 // self.num_tasks
         target_sep = [(i*set_size, (i+1)*set_size) for i in range(self.num_tasks)]
         target_sep[-1] = (target_sep[-1][0], 100)
 
-        for task_id in range(self.num_tasks):
+        for task_id in tasks:
             # register hooks
             hook_w = self.model.top_layers[1].weight.register_hook(partial(zero_out_hook, 
                                                                       cond=target_sep[task_id]))
@@ -107,7 +107,8 @@ class ExperimentTrainer():
                                          self.loaders["train"], 
                                          self.loaders["val"], 
                                          task_id,
-                                         num_epochs_per_task)
+                                         num_epochs_per_task,
+                                         num_tasks = len(tasks))
 
             # check is the hooks are working as planned
             weight = self.model.top_layers[1].weight

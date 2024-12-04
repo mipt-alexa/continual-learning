@@ -1,8 +1,6 @@
 import torch
-from torch import optim, nn
+from torch import nn
 
-from torchvision import datasets, models
-import torchvision.transforms.v2 as T
 
 from tqdm import tqdm
 import wandb
@@ -64,6 +62,12 @@ def train(model, device, optimizer, scheduler, criterion, train_loaders, val_loa
                                      
         print(f"Epoch {i}: loss = {losses[i].item():5.2f}, train_acc = {train_acc[-1][task_id]:.2f}, val_acc = {val_acc[-1][task_id]:.2f}")
 
+
+        weights = model.top_layers[1].weight
+
+        print(nn.Softmax()(torch.tensor([torch.exp(weights).norm(dim=1)[10*i:10*(i+1)].sum() for i in range(10)])))
+
+    
     return losses, train_acc, val_acc
 
 
