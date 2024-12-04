@@ -2,6 +2,7 @@
 pipeline/data/
 /pipeline/results/
 /pipeline/wandb/
+start.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
